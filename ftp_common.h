@@ -10,4 +10,8 @@
 
 void signal_interceptor();
 
+void explode(const char *src, const char *tokens, char ***list, size_t *len);
+
+char *strdup(const char *src);
+
 #endif //PROJET_FTP_COMMON_H
