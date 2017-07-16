@@ -56,7 +56,7 @@ int init_connection() {
 
 void client_cli(int socket_desc) {
 	char buffer[CLIENT_BUFFER_LENGTH];
-	bzero(buffer, CLIENT_BUFFER_LENGTH + 1);
+	memset(buffer, 0, sizeof(buffer));
 	while (keepRunning) {
 		printf("Your message : ");
 		char input[CLIENT_BUFFER_LENGTH];
@@ -80,7 +80,7 @@ void client_cli(int socket_desc) {
 			break;
 		}
 		printf("I read: %s \n", receive);
-		bzero(buffer, CLIENT_BUFFER_LENGTH + 1);
+		memset(buffer, 0, sizeof(buffer));
 		sleep(1);
 	}
 }

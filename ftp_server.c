@@ -115,11 +115,11 @@ void *client_handler(void *arguments) {
 	//close(sock);
 	char *client_ip_addr = inet_ntoa(args->pt_client.sin_addr);
 	printf("New client - %s\n", client_ip_addr);
-	bzero(buffer, CLIENT_BUFFER_LENGTH + 1);
+	memset(buffer, 0, sizeof(buffer));
 
 	listen_client_cli(args->client_sock, client_ip_addr, buffer);
 
-	printf("Close Client - %s\n", client_ip_addr);
+	printf("Closed client - %s\n", client_ip_addr);
 	close(args->client_sock);
 	pthread_exit(NULL);
 
@@ -133,7 +133,7 @@ void listen_client_cli(int sclient, char *client_ip_addr, char *buffer) {
 			break;
 		}
 		write(sclient, buffer, CLIENT_BUFFER_LENGTH);
-		bzero(buffer, CLIENT_BUFFER_LENGTH + 1);
+		memset(buffer, 0, sizeof(buffer));
 	}
 }
 
