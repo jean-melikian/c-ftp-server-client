@@ -33,4 +33,9 @@ void explode(const char *src, const char *tokens, char ***list, size_t *len);
 
 char *strdup(const char *src);
 
+void clear_string(char *string);
+
+void clear_strings_array(char **str_arr, int nb_str);
+
+
 #endif //PROJET_FTP_COMMON_H

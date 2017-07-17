@@ -48,9 +48,9 @@ void ok(int socket_desc);
 void bad(int socket_desc);
 
 //
+char res_buffer[CLIENT_BUFFER_LENGTH];
 
 void interpretor(int socket_desc, char *str);
-
 
 typedef struct {
 	int client_sock;
@@ -205,13 +205,20 @@ void content(int socket_desc, char *file_path) {
 
 	sprintf(output, "%010ld\n%s", fsize, buffer);
 	write(socket_desc, output, strlen(output));
+	clear_string(output);
+	clear_string(buffer);
+	clear_string(file_path);
+
 	free(output);
+	free(buffer);
 
 }
 
 void no_such_file(int socket_desc) {
-	char *output = "NOSUCHFILE\n";
-	write(socket_desc, output, strlen(output));
+
+	sprintf(res_buffer, "NOSUCHFILE\n");
+	write(socket_desc, res_buffer, CLIENT_BUFFER_LENGTH);
+
 }
 
 
@@ -221,8 +228,8 @@ void no_such_file(int socket_desc) {
  */
 void interpretor(int socket_desc, char *str) {
 	char **list;
-	char **params;
-	size_t len, lenparams;
+	char **params = NULL;
+	size_t len = 0, lenparams = 0;
 
 	explode(str, " ", &list, &len);
 
@@ -240,6 +247,10 @@ void interpretor(int socket_desc, char *str) {
 		// Launch CMD NEED
 		need(socket_desc, list[1]);
 
+	}
+	clear_strings_array(list, (int) len);
+	if (params != NULL && lenparams != 0) {
+		clear_strings_array(params, (int) lenparams);
 	}
 }
 
@@ -262,5 +273,6 @@ void stop_server(int socket_desc) {
 	close(socket_desc);
 	printf("Server killed\n");
 }
+
 
 
