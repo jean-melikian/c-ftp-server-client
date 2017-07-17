@@ -157,3 +157,15 @@ void explode(const char *src, const char *tokens, char ***list, size_t *len) {
 	*list = _list;
 	free(copy);
 }
+
+
+void clear_string(char *string) {
+	if(string != NULL && strlen(string) > 0)
+		memset(string, 0, strlen(string));
+}
+
+void clear_strings_array(char **str_arr, int nb_str) {
+	for (int i = 0; i < nb_str; i++) {
+		clear_string(str_arr[i]);
+	}
+}
