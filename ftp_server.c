@@ -18,7 +18,7 @@ void sigint_handler(int dummy) {
 	keepRunning = 0;
 }
 
-int init_server();
+int init_socket();
 
 void ftp_service_listen(int socket_desc);
 
@@ -39,7 +39,7 @@ void need(int socket_desc, char *param);
 void slave(int socket_desc, char **params, size_t count);
 
 // Responses from the server
-void content(int socket_desc, char* file_path);
+void content(int socket_desc, char *file_path);
 
 void no_such_file(int socket_desc);
 
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 
 	signal_interceptor();
 
-	int socket_desc = init_server();
+	int socket_desc = init_socket();
 
 	ftp_service_listen(socket_desc);
 
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-int init_server() {
+int init_socket() {
 
 	int socket_desc = socket(PF_INET, SOCK_STREAM, 0);
 	if (socket_desc == -1) {
@@ -85,49 +85,49 @@ int init_server() {
 	server.sin_port = htons(SERVER_CLIENT_PORT);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(socket_desc, (struct sockaddr *) &server, sizeof(server)) != 0) {
-        perror("Unable to bind port");
-        exit(1);
-    }
-    puts("Bind done");
+	if (bind(socket_desc, (struct sockaddr *) &server, sizeof(server)) != 0) {
+		perror("Unable to bind port");
+		exit(1);
+	}
+	puts("Bind done");
 
-    if (listen(socket_desc, 10) == -1) {
-        perror("Unable to listen");
-        exit(1);
-    }
+	if (listen(socket_desc, 10) == -1) {
+		perror("Unable to listen");
+		exit(1);
+	}
 
 
-    return socket_desc;
+	return socket_desc;
 }
 
 void ftp_service_listen(int socket_desc) {
-    struct sockaddr_in pt_client; // the client's endpoint information
-    socklen_t len;
-    int sclient; // the client's pipe descriptor
+	struct sockaddr_in pt_client; // the client's endpoint information
+	socklen_t len;
+	int sclient; // the client's pipe descriptor
 
 
-    printf("Server listening on port %d\n", SERVER_CLIENT_PORT);
-    while (keepRunning) {
+	printf("Server listening on port %d\n", SERVER_CLIENT_PORT);
+	while (keepRunning) {
 
-        sclient = accept(socket_desc, (struct sockaddr *) &pt_client, &len);
-        if (sclient < 0) {
-            perror("Connection failed");
-        } else {
-            puts("Connection accepted");
+		sclient = accept(socket_desc, (struct sockaddr *) &pt_client, &len);
+		if (sclient < 0) {
+			perror("Connection failed");
+		} else {
+			puts("Connection accepted");
 
-            pthread_t thread_id;
-            client_handler_args args = {sclient, pt_client};
+			pthread_t thread_id;
+			client_handler_args args = {sclient, pt_client};
 
-            if (pthread_create(&thread_id, NULL, client_handler, (void *) &args) < 0) {
-                perror("Could not create a new thread !");
-                //exit(1);
-            } else {
-                puts("A new thread has been created for the client !");
+			if (pthread_create(&thread_id, NULL, client_handler, (void *) &args) < 0) {
+				perror("Could not create a new thread !");
+				//exit(1);
+			} else {
+				puts("A new thread has been created for the client !");
 
-            }
+			}
 
-        }
-    }
+		}
+	}
 }
 
 /**
@@ -136,21 +136,21 @@ void ftp_service_listen(int socket_desc) {
  * @return
  */
 void *client_handler(void *arguments) {
-    // Get the socket descriptor
-    client_handler_args *args = arguments;
+	// Get the socket descriptor
+	client_handler_args *args = arguments;
 
 
-    char buffer[CLIENT_BUFFER_LENGTH];
-    //close(sock);
-    char *client_ip_addr = inet_ntoa(args->pt_client.sin_addr);
-    printf("New client - %s\n", client_ip_addr);
-    memset(buffer, 0, sizeof(buffer));
+	char buffer[CLIENT_BUFFER_LENGTH];
+	//close(sock);
+	char *client_ip_addr = inet_ntoa(args->pt_client.sin_addr);
+	printf("New client - %s\n", client_ip_addr);
+	memset(buffer, 0, sizeof(buffer));
 
-    listen_client_cli(args->client_sock, client_ip_addr, buffer);
+	listen_client_cli(args->client_sock, client_ip_addr, buffer);
 
-    printf("Closed client - %s\n", client_ip_addr);
-    close(args->client_sock);
-    pthread_exit(NULL);
+	printf("Closed client - %s\n", client_ip_addr);
+	close(args->client_sock);
+	pthread_exit(NULL);
 
 }
 
@@ -159,9 +159,9 @@ void *client_handler(void *arguments) {
  * @param params
  */
 void want(int socket_desc, char **params, size_t count) {
-    printf("FUNCTION: WANT\n");
+	printf("FUNCTION: WANT\n");
 
-	for(int i = 0; i < count; i++) {
+	for (int i = 0; i < count; i++) {
 		printf("%s ", params[i]);
 	}
 }
@@ -185,62 +185,63 @@ void need(int socket_desc, char *param) {
 	content(socket_desc, param);
 }
 
-void content(int socket_desc, char* file_path) {
-	char *output = malloc(sizeof(char) * 1000);
-
-	if(file_path != NULL) {
-
-		FILE *f = fopen(file_path, "rb");
-		fseek(f, 0, SEEK_END);
-		long fsize = ftell(f);
-		fseek(f, 0, SEEK_SET);  //same as rewind(f);
-
-		char *buffer = malloc(fsize + 1);
-		fread(buffer, fsize, 1, f);
-		fclose(f);
-
-		buffer[fsize] = 0;
-
-		output = malloc(fsize + sizeof(char) * 11);
-
-		sprintf(output, "%010ld\n%s", fsize, buffer);
-		write(socket_desc, output, strlen(output));
-	} else {
-
-		strcpy(output, "NEED requires a file path argument !");
-		write(socket_desc, output, strlen(output));
+void content(int socket_desc, char *file_path) {
+	FILE *f;
+	if (file_path == NULL || (f = fopen(file_path, "rb")) == NULL) {
+		no_such_file(socket_desc);
+		return;
 	}
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  //same as rewind(f);
+
+	char *buffer = malloc(fsize + 1);
+	fread(buffer, fsize, 1, f);
+	fclose(f);
+
+	buffer[fsize] = 0;
+
+	char *output = malloc(fsize + sizeof(char) * 11);
+
+	sprintf(output, "%010ld\n%s", fsize, buffer);
+	write(socket_desc, output, strlen(output));
 	free(output);
+
 }
+
+void no_such_file(int socket_desc) {
+	char *output = "NOSUCHFILE\n";
+	write(socket_desc, output, strlen(output));
+}
+
 
 /**
  * Function which interprets the command sent by the client
  * @param str
  */
 void interpretor(int socket_desc, char *str) {
-    char **list;
-    char **params;
-    size_t len, lenparams;
+	char **list;
+	char **params;
+	size_t len, lenparams;
 
-    explode(str, " ", &list, &len);
+	explode(str, " ", &list, &len);
 
-    if (strcmp(list[0], "WANT") == 0 || strcmp(list[0], "want") == 0) {
-        // Launch CMD WANT
-        explode(list[1], ",", &params, &lenparams);
-        want(socket_desc, params, lenparams);
+	if (strcmp(list[0], "WANT") == 0 || strcmp(list[0], "want") == 0) {
+		// Launch CMD WANT
+		explode(list[1], ",", &params, &lenparams);
+		want(socket_desc, params, lenparams);
 
-    } else if (strcmp(list[0], "FILES") == 0 || strcmp(list[0], "files") == 0) {
-        // Launch CMD FILES
-        explode(list[1], ",", &params, &lenparams);
-        files(socket_desc, params, lenparams);
+	} else if (strcmp(list[0], "FILES") == 0 || strcmp(list[0], "files") == 0) {
+		// Launch CMD FILES
+		explode(list[1], ",", &params, &lenparams);
+		files(socket_desc, params, lenparams);
 
-    } else if (strcmp(list[0], "NEED") == 0 || strcmp(list[0], "need") == 0) {
-        // Launch CMD NEED
-        need(socket_desc, list[1]);
+	} else if (strcmp(list[0], "NEED") == 0 || strcmp(list[0], "need") == 0) {
+		// Launch CMD NEED
+		need(socket_desc, list[1]);
 
-    }
+	}
 }
-
 
 void listen_client_cli(int socket_desc, char *client_ip_addr, char *buffer) {
 	while (keepRunning && read(socket_desc, buffer, sizeof(char) * CLIENT_BUFFER_LENGTH) > 0) {
@@ -258,8 +259,8 @@ void listen_client_cli(int socket_desc, char *client_ip_addr, char *buffer) {
 }
 
 void stop_server(int socket_desc) {
-    close(socket_desc);
-    printf("Server killed\n");
+	close(socket_desc);
+	printf("Server killed\n");
 }
 
 
