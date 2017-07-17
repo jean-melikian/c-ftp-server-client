@@ -22,21 +22,34 @@ int init_server();
 
 void ftp_service_listen(int socket_desc);
 
-void listen_client_cli(int sclient, char *client_ip_addr, char *buffer);
+void listen_client_cli(int socket_desc, char *client_ip_addr, char *buffer);
 
 void stop_server(int socket_desc);
 
 void *client_handler(void *arguments);
 
-void want(char **params);
+// -- Commands coming from clients
+void want(int socket_desc, char **params, size_t count);
 
-void files(char **params);
+void files(int socket_desc, char **params, size_t count);
 
-void need(char *param);
+void need(int socket_desc, char *param);
 
-void need(char *param);
+// -- Commands coming from slaves
+void slave(int socket_desc, char **params, size_t count);
 
-void interpretor(char *str);
+// Responses from the server
+void content(int socket_desc, char* file_path);
+
+void no_such_file(int socket_desc);
+
+void ok(int socket_desc);
+
+void bad(int socket_desc);
+
+//
+
+void interpretor(int socket_desc, char *str);
 
 
 typedef struct {
@@ -145,15 +158,21 @@ void *client_handler(void *arguments) {
  * Going to search some files listed by the client
  * @param params
  */
-void want(char **params) {
+void want(int socket_desc, char **params, size_t count) {
+    printf("FUNCTION: WANT\n");
 
+	for(int i = 0; i < count; i++) {
+		printf("%s ", params[i]);
+	}
 }
 
 /**
  *
  * @param params
  */
-void files(char **params) {
+void files(int socket_desc, char **params, size_t count) {
+	printf("FUNCTION: FILES\n");
+
 
 }
 
@@ -161,19 +180,44 @@ void files(char **params) {
  * Going to search one file
  * @param param
  */
-void need(char *param) {
-
+void need(int socket_desc, char *param) {
+	printf("FUNCTION: NEED\n");
+	content(socket_desc, param);
 }
 
-void content() {
+void content(int socket_desc, char* file_path) {
+	char *output = malloc(sizeof(char) * 1000);
 
+	if(file_path != NULL) {
+
+		FILE *f = fopen(file_path, "rb");
+		fseek(f, 0, SEEK_END);
+		long fsize = ftell(f);
+		fseek(f, 0, SEEK_SET);  //same as rewind(f);
+
+		char *buffer = malloc(fsize + 1);
+		fread(buffer, fsize, 1, f);
+		fclose(f);
+
+		buffer[fsize] = 0;
+
+		output = malloc(fsize + sizeof(char) * 11);
+
+		sprintf(output, "%010ld\n%s", fsize, buffer);
+		write(socket_desc, output, strlen(output));
+	} else {
+
+		strcpy(output, "NEED requires a file path argument !");
+		write(socket_desc, output, strlen(output));
+	}
+	free(output);
 }
 
 /**
  * Function which interprets the command sent by the client
  * @param str
  */
-void interpretor(char *str) {
+void interpretor(int socket_desc, char *str) {
     char **list;
     char **params;
     size_t len, lenparams;
@@ -183,35 +227,32 @@ void interpretor(char *str) {
     if (strcmp(list[0], "WANT") == 0 || strcmp(list[0], "want") == 0) {
         // Launch CMD WANT
         explode(list[1], ",", &params, &lenparams);
-        want(params);
+        want(socket_desc, params, lenparams);
 
     } else if (strcmp(list[0], "FILES") == 0 || strcmp(list[0], "files") == 0) {
         // Launch CMD FILES
         explode(list[1], ",", &params, &lenparams);
-        files(params);
+        files(socket_desc, params, lenparams);
 
     } else if (strcmp(list[0], "NEED") == 0 || strcmp(list[0], "need") == 0) {
         // Launch CMD NEED
-        need(list[1]);
+        need(socket_desc, list[1]);
 
-    } else if (strcmp(list[0], "CONTENT") == 0 || strcmp(list[0], "content") == 0) {
-        // Launch CMD CONTENT
-        content();
     }
 }
 
 
-void listen_client_cli(int sclient, char *client_ip_addr, char *buffer) {
-	while (keepRunning && read(sclient, buffer, sizeof(char) * CLIENT_BUFFER_LENGTH) > 0) {
+void listen_client_cli(int socket_desc, char *client_ip_addr, char *buffer) {
+	while (keepRunning && read(socket_desc, buffer, sizeof(char) * CLIENT_BUFFER_LENGTH) > 0) {
 		printf("From %s: [%s]\n", client_ip_addr, buffer);
 		if (strcmp(buffer, "exit") == 0) {
 			printf("%s asked to close the connection\n", client_ip_addr);
 			break;
 		}
 
-		interpretor(buffer);
+		interpretor(socket_desc, buffer);
 
-		write(sclient, buffer, CLIENT_BUFFER_LENGTH);
+		//write(socket_desc, buffer, CLIENT_BUFFER_LENGTH);
 		memset(buffer, 0, CLIENT_BUFFER_LENGTH);
 	}
 }
@@ -220,4 +261,5 @@ void stop_server(int socket_desc) {
     close(socket_desc);
     printf("Server killed\n");
 }
+
 

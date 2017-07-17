@@ -10,8 +10,6 @@
 #include <arpa/inet.h>
 #include <memory.h>
 #include <unistd.h>
-#include <netdb.h>
-#include <string.h>
 #include "ftp_common.h"
 
 void signal_interceptor() {
@@ -85,9 +83,6 @@ ssize_t write_server(int socket_desc, char *output, size_t nb_bytes) {
 }
 
 int send_request(int socket_desc, char *output, size_t nb_bytes) {
-
-	printf("You wrote: %s", output);
-	printf("Length: %zu", nb_bytes);
 
 	char socket_input[CLIENT_BUFFER_LENGTH];
 
