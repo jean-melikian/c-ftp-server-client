@@ -1,9 +1,14 @@
 # Programmation système et réseau - FTP client/server/slave
 
+Dépôt GitHub: https://github.com/ozonePowered/c-ftp-server-client
+
+Environnement de développement:
+- macOS Sierra
+- CLion
+- CMake 3.7
+
 ## Compilation
 
-Version de CMake recommandée: __3.7__
-IDE recommandé: CLion
 
 ```bash
 mkdir build && cd build
@@ -25,3 +30,12 @@ Serveur:
 ./bin/ftp_client
 ```
 
+## Commandes CLI
+
+NEED: 
+
+Retourne: la taille et le contenu d'un fichier ou NOSUCHFILE si l'entrée de correspond à aucun chemin connu du serveur
+```bash
+NEED <chemin/du/fichier/à/afficher>
+```
+ 
